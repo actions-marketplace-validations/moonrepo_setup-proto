@@ -1,3 +1,5 @@
+# DEPRECATED: Use https://github.com/moonrepo/setup-toolchain instead!
+
 # Setup and install the proto toolchain
 
 A GitHub action that sets up an environment for proto by...
@@ -21,7 +23,7 @@ jobs:
       - uses: actions/checkout@v3
         with:
           fetch-depth: 0
-      - uses: moonrepo/setup-proto@v0
+      - uses: moonrepo/setup-proto@v1
       - run: proto use
 ```
 

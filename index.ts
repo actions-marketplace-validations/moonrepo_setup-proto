@@ -4,7 +4,7 @@ import execa from 'execa';
 import * as cache from '@actions/cache';
 import * as core from '@actions/core';
 import * as tc from '@actions/tool-cache';
-import { getProtoDir, getToolchainCacheKey, getToolsDir } from './helpers';
+import { getPluginsDir, getProtoDir, getToolchainCacheKey, getToolsDir } from './helpers';
 
 const WINDOWS = process.platform === 'win32';
 
@@ -25,10 +25,14 @@ async function installProto() {
 	}
 
 	const scriptName = WINDOWS ? 'proto.ps1' : 'proto.sh';
-	const script = await tc.downloadTool(
-		`https://moonrepo.dev/install/${scriptName}`,
-		path.join(getProtoDir(), 'temp', scriptName),
-	);
+	const scriptPath = path.join(getProtoDir(), 'temp', scriptName);
+
+	// If the installer already exists, delete it and ensure were using the latest
+	if (fs.existsSync(scriptPath)) {
+		fs.unlinkSync(scriptPath);
+	}
+
+	const script = await tc.downloadTool(`https://moonrepo.dev/install/${scriptName}`, scriptPath);
 	const args = version === 'latest' ? [] : [version];
 
 	core.info(`Downloaded installation script to ${script}`);
@@ -59,7 +63,7 @@ async function restoreCache() {
 
 	const primaryKey = await getToolchainCacheKey();
 	const cacheKey = await cache.restoreCache(
-		[getToolsDir()],
+		[getPluginsDir(), getToolsDir()],
 		primaryKey,
 		[`proto-toolchain-${process.platform}`, 'proto-toolchain'],
 		{},
@@ -70,7 +74,7 @@ async function restoreCache() {
 		core.saveState('cacheHitKey', cacheKey);
 		core.info(`Toolchain cache restored using key ${primaryKey}`);
 	} else {
-		core.warning(`Toolchain cache does not exist using key ${primaryKey}`);
+		core.info(`Toolchain cache does not exist using key ${primaryKey}`);
 	}
 
 	core.setOutput('cache-key', cacheKey ?? primaryKey);
@@ -78,6 +82,10 @@ async function restoreCache() {
 }
 
 async function run() {
+	core.warning(
+		'This action is deprecated and will be removed in a future release. Please use https://github.com/moonrepo/setup-toolchain instead.',
+	);
+
 	try {
 		await restoreCache();
 		await installProto();
